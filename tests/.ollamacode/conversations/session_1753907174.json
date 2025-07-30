@@ -1,0 +1,15 @@
+{
+  "id": "session_1753907174",
+  "created_at": "2025-07-30T21:26:14.787024",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Test message 1"
+    },
+    {
+      "role": "assistant",
+      "content": "Test response 1"
+    }
+  ],
+  "project_context": "Project: tests\nType: unknown\nRoot: /Users/jasontoo/Github/ollamacode/tests"
+}
