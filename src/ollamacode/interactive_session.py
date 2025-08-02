@@ -17,6 +17,8 @@ from .permissions import PermissionManager
 from .syntax_highlighter import CodeHighlighter
 from .autocomplete import AutoCompleter
 from .error_handler import create_detailed_error_message, show_helpful_error
+from .feedback import FeedbackCollector, create_session_data
+from .tool_executor import ToolCallExecutor
 
 console = Console()
 
@@ -24,11 +26,12 @@ console = Console()
 class InteractiveSession:
     """Manage an interactive OllamaCode session."""
     
-    def __init__(self, model: str = None, url: str = None):
+    def __init__(self, model: str = None, url: str = None, timeout: int = None):
         self.config = Config()
         self.client = OllamaClient(
             base_url=url or self.config.get('ollama_url'),
-            model=model or self.config.get('default_model')
+            model=model or self.config.get('default_model'),
+            timeout=timeout or self.config.get('timeout', 120)
         )
         
         # Initialize permission manager and tools
@@ -38,6 +41,10 @@ class InteractiveSession:
         self.search_ops = SearchOperations()
         self.bash_ops = BashOperations()
         self.context_mgr = ContextManager()
+        self.feedback_collector = FeedbackCollector()
+        
+        # Initialize tool call executor for new tool calling approach
+        self.tool_executor = ToolCallExecutor(self.permissions)
         
         # Session state
         self.conversation_id = f"session_{int(datetime.now().timestamp())}"
@@ -185,7 +192,41 @@ When users ask for help, consider the project context and suggest relevant actio
                 break
     
     def _process_user_input(self, user_input: str) -> str:
-        """Process user input and determine appropriate response."""
+        """Process user input using Ollama tool calling (reliable approach)."""
+        user_input = user_input.strip()
+        
+        # Handle slash commands
+        if user_input.startswith('/'):
+            return self._handle_slash_command(user_input)
+        
+        # Handle file references (@filename)
+        user_input = self._process_file_references(user_input)
+        
+        self.messages.append({"role": "user", "content": user_input})
+        
+        try:
+            # Use tool calling approach - let LLM decide what tools to use
+            response = self.client.chat_with_tools(self.messages, stream=False)
+            
+            if response["type"] == "tool_calls":
+                # LLM wants to use tools
+                return self._handle_tool_calls_response(response)
+            elif response["type"] == "text":
+                # Regular text response
+                content = response["content"]
+                self.messages.append({"role": "assistant", "content": content})
+                return content
+            else:
+                # Error response
+                return response["content"]
+                
+        except Exception as e:
+            error_msg = create_detailed_error_message(e, "AI response generation", user_input)
+            console.print(error_msg)
+            return f"Sorry, I encountered an error: {e}"
+    
+    def _process_user_input_legacy(self, user_input: str) -> str:
+        """Process user input and determine appropriate response (legacy keyword detection)."""
         user_input = user_input.strip()
         
         # Handle slash commands
@@ -203,6 +244,52 @@ When users ask for help, consider the project context and suggest relevant actio
         else:
             # Regular conversation
             return self._get_ai_response()
+    
+    
+    def _handle_tool_calls_response(self, response: dict) -> str:
+        """Handle response when LLM wants to call tools."""
+        tool_calls = response["tool_calls"]
+        assistant_content = response["content"]
+        
+        # Add assistant message with tool calls
+        self.messages.append({
+            "role": "assistant", 
+            "content": assistant_content,
+            "tool_calls": tool_calls
+        })
+        
+        # Execute the tool calls
+        tool_results = self.tool_executor.execute_tool_calls(tool_calls)
+        
+        # Add tool results to conversation
+        for tool_result in tool_results:
+            tool_message = self.tool_executor.format_tool_result_for_llm(tool_result)
+            self.messages.append(tool_message)
+        
+        # Get LLM's response after tool execution
+        try:
+            final_response = self.client.chat(self.messages, stream=False)
+            
+            if final_response["type"] == "text":
+                content = final_response["content"]
+                self.messages.append({"role": "assistant", "content": content})
+                return content
+            else:
+                return "Tool execution completed, but couldn't generate final response."
+                
+        except Exception as e:
+            error_msg = f"Tools executed successfully, but error in final response: {e}"
+            console.print(f"[yellow]{error_msg}[/yellow]")
+            
+            # Return a summary of what was accomplished
+            successful_tools = [r for r in tool_results if r["success"]]
+            if successful_tools:
+                summary = "✅ Successfully executed:\n"
+                for tool in successful_tools:
+                    summary += f"- {tool['function_name']}\n"
+                return summary
+            else:
+                return "Tool execution attempted but encountered errors."
     
     def _should_use_tools(self, user_input: str) -> bool:
         """Determine if user input requires tool usage."""
@@ -656,7 +743,8 @@ DO NOT make up or hallucinate any command outputs - only use the real data provi
         args = parts[1] if len(parts) > 1 else ""
         
         if cmd == "help":
-            return self._show_help()
+            console.print(self._show_help())
+            return ""
         elif cmd == "clear":
             return self._clear_conversation()
         elif cmd == "model":
@@ -673,6 +761,8 @@ DO NOT make up or hallucinate any command outputs - only use the real data provi
             return self._manage_cache(args)
         elif cmd == "complete":
             return self._handle_completion_command(args)
+        elif cmd == "feedback":
+            return self._handle_feedback_command(args)
         elif cmd == "exit" or cmd == "quit":
             # Set a flag to exit gracefully instead of calling sys.exit() directly
             if len(self.messages) > 1:  # More than just system message
@@ -701,6 +791,7 @@ DO NOT make up or hallucinate any command outputs - only use the real data provi
   /permissions         Manage operation permissions
   /cache               Manage response cache
   /complete            Show completion suggestions
+  /feedback            Submit feedback or bug reports
   
 [bold yellow]File Operations:[/bold yellow]
   @filename            Reference a file in your prompt
@@ -709,6 +800,8 @@ DO NOT make up or hallucinate any command outputs - only use the real data provi
   /model gemma3        Switch to gemma3 model
   /clear               Start fresh conversation
   /permissions status  Show current permissions
+  /feedback "Great session, worked perfectly!"
+  /feedback bug "File creation failed with error"
   @main.py explain this file to me
 """
         return help_text
@@ -1011,6 +1104,93 @@ Please provide an improved version of this file. Consider the project context an
         if formatted:
             console.print(f"\n[bold cyan]💡 Completion Suggestions:[/bold cyan]")
             console.print(formatted)
+    
+    def _handle_feedback_command(self, args: str) -> str:
+        """Handle feedback submission command."""
+        if not args.strip():
+            # No arguments - show feedback help
+            console.print(self._show_feedback_help())
+            return ""
+        
+        args = args.strip()
+        
+        # Handle configuration subcommand
+        if args == "config":
+            self.feedback_collector.configure_interactively()
+            return "[green]Feedback configuration updated.[/green]"
+        
+        # Parse feedback type and message
+        feedback_type = "general"  # default
+        feedback_text = args
+        
+        # Check for feedback type keywords
+        if args.startswith("bug "):
+            feedback_type = "bug"
+            feedback_text = args[4:].strip()
+        elif args.startswith("feature "):
+            feedback_type = "feature"
+            feedback_text = args[8:].strip()
+        elif args.startswith("session "):
+            feedback_type = "session"
+            feedback_text = args[8:].strip()
+        elif args.startswith("error "):
+            feedback_type = "error"
+            feedback_text = args[6:].strip()
+        
+        if not feedback_text:
+            return "[red]Please provide feedback text after the type.[/red]\nExample: /feedback bug \"File creation failed\""
+        
+        # Create session data for context
+        recent_commands = []  # TODO: Track commands in session
+        session_data = create_session_data(self.messages, recent_commands)
+        
+        # Ask for consent to include session data
+        include_session = True
+        if self.feedback_collector.include_session_data and len(self.messages) > 1:
+            console.print("\n[yellow]Include current session data with feedback?[/yellow]")
+            console.print("[dim]This helps with debugging but includes your conversation history.[/dim]")
+            include_session = Confirm.ask("Include session data?", default=True)
+        
+        # Submit feedback
+        session_data_to_send = session_data if include_session else None
+        success = self.feedback_collector.submit_feedback(
+            feedback_text=feedback_text,
+            feedback_type=feedback_type,
+            session_data=session_data_to_send
+        )
+        
+        if success:
+            return "[green]✅ Thank you for your feedback![/green]"
+        else:
+            return "[yellow]⚠️  Feedback saved locally. Check your feedback configuration.[/yellow]"
+    
+    def _show_feedback_help(self) -> str:
+        """Show feedback command help."""
+        help_text = """[bold blue]📋 Feedback System[/bold blue]
+
+[bold yellow]Submit Feedback:[/bold yellow]
+  /feedback "message"           General feedback
+  /feedback bug "description"   Report a bug
+  /feedback feature "idea"      Suggest a feature
+  /feedback session "comment"   Comment on this session
+  /feedback error "details"     Report an error
+
+[bold yellow]Examples:[/bold yellow]
+  /feedback "This worked great for my React project!"
+  /feedback bug "File creation failed with permission error"
+  /feedback feature "Add support for TypeScript imports"
+  /feedback session "Autocomplete was slow but helpful"
+
+[bold yellow]Configuration:[/bold yellow]
+  /feedback config             Configure feedback settings
+
+[dim]Your feedback helps improve OllamaCode for everyone![/dim]"""
+        
+        if not self.feedback_collector.is_configured():
+            help_text += "\n\n[yellow]⚠️  Feedback system not configured.[/yellow]"
+            help_text += "\n[dim]Feedback will be saved locally only.[/dim]"
+        
+        return help_text
     
     def _save_and_exit(self):
         """Save conversation and exit."""

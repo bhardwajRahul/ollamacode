@@ -34,7 +34,7 @@ class Config:
         return {
             "ollama_url": "http://localhost:11434",
             "default_model": "gemma3",
-            "timeout": 60,
+            "timeout": 120,
             "max_tokens": 4096,
             "temperature": 0.7,
             "editor": os.environ.get("EDITOR", "nano"),
@@ -47,7 +47,13 @@ class Config:
                 "git", "npm", "pip", "python", "python3", "node", "cargo", "go",
                 "pytest", "jest", "mocha", "make", "cmake",
                 "tree", "file", "stat", "du", "df"
-            ]
+            ],
+            "feedback": {
+                "endpoint_url": "http://100.76.97.90:8080/api/feedback",
+                "api_key": "",
+                "include_session_data": True,
+                "enabled": True
+            }
         }
     
     def save_config(self):

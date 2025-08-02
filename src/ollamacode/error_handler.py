@@ -65,7 +65,7 @@ def handle_errors(func: Callable) -> Callable:
                 console.print(Panel.fit(
                     f"[red]Unexpected error:[/red]\n{str(e)}\n\n"
                     f"[blue]Please report this at:[/blue]\n"
-                    f"https://github.com/anthropics/claude-code/issues",
+                    f"https://github.com/tooyipjee/ollamacode_dev/issues",
                     title="Error",
                     border_style="red"
                 ))
@@ -248,7 +248,7 @@ def create_detailed_error_message(error: Exception, context: str = "", user_acti
         "",
         "[dim]For more help:[/dim]",
         "[dim]• Type `/help` for available commands[/dim]",
-        "[dim]• Visit: https://docs.anthropic.com/en/docs/claude-code[/dim]"
+        "[dim]• Open issue: https://github.com/tooyipjee/ollamacode_dev/issues[/dim]"
     ])
     
     return "\n".join(parts)
