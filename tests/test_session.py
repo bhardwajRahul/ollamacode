@@ -12,12 +12,18 @@ def test_tool_execution():
     """Test that tools execute properly."""
     
     # Mock Ollama client
-    with patch('ollamacode.interactive_session.OllamaClient') as mock_client_class:
+    with patch('ollamacode.interactive_session.OllamaClient') as mock_client_class, \
+         patch('ollamacode.interactive_session.ContextManager') as mock_context_class:
+        
         mock_client = Mock()
         mock_client.is_available.return_value = True
         mock_client.model = "gemma3"
         mock_client.chat.return_value = "Let me check the git status for you."
         mock_client_class.return_value = mock_client
+        
+        # Mock context manager to avoid directory creation issues
+        mock_context = Mock()
+        mock_context_class.return_value = mock_context
         
         # Create session
         session = InteractiveSession()

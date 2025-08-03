@@ -31,17 +31,17 @@ See OllamaCode in action with these real-world demonstrations:
 ### Demo 1: Automated Script Creation & Execution
 Watch OllamaCode create a Python script from natural language and execute it automatically.
 
-![Script Creation Demo](demos/demo_1.gif)
+![Script Creation Demo](demo_1.gif)
 
 ### Demo 2: Git Repository Management  
 See how OllamaCode can initialize a git repository and create commits with intelligent commit messages.
 
-![Git Management Demo](demos/demo_2.gif)
+![Git Management Demo](demo_2.gif)
 
 ### Demo 3: Codebase Analysis & Documentation
 Observe OllamaCode studying your codebase and automatically updating documentation.
 
-![Codebase Analysis Demo](demos/demo_3.gif)
+![Codebase Analysis Demo](demo_3.gif)
 
 ---
 
@@ -74,7 +74,7 @@ Observe OllamaCode studying your codebase and automatically updating documentati
 
 ```bash
 # Install from source
-git clone https://github.com/tooyipjee/ollamacode.git
+git clone https://github.com/tooyipjee/ollamacode_dev.git
 cd ollamacode
 pip install -e .
 
@@ -241,7 +241,7 @@ File not found: config.txt
 
 For more help:
 • Type `/help` for available commands
-• Report issues: https://github.com/tooyipjee/ollamacode/issues
+• Report issues: https://github.com/tooyipjee/ollamacode_dev/issues
 ```
 
 ### ⚡ Intelligent Caching
@@ -496,7 +496,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ### Development Setup
 
 ```bash
-git clone https://github.com/tooyipjee/ollamacode.git
+git clone https://github.com/tooyipjee/ollamacode_dev.git
 cd ollamacode
 pip install -e .[dev]
 

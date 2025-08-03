@@ -107,8 +107,11 @@ class TestSessionWithMocks:
         """Test processing regular conversation."""
         session = InteractiveSession()
         
-        # Mock a regular conversation response
-        self.mock_client.chat.return_value = "Hello! How can I help you?"
+        # Mock a regular conversation response using new tool calling API
+        self.mock_client.chat_with_tools.return_value = {
+            "type": "text",
+            "content": "Hello! How can I help you?"
+        }
         
         response = session._process_user_input("Hello")
         
@@ -121,15 +124,35 @@ class TestSessionWithMocks:
         """Test processing requests that need tools."""
         session = InteractiveSession()
         
-        # Mock tool request response
-        self.mock_client.chat.return_value = "I'll help you edit that file."
+        # Mock tool calling response
+        self.mock_client.chat_with_tools.return_value = {
+            "type": "tool_calls",
+            "tool_calls": [{
+                "id": "call_1",
+                "function": {
+                    "name": "write_file",
+                    "arguments": {"file_path": "test.py", "content": "print('hello')"}
+                }
+            }],
+            "content": "I'll create that file for you."
+        }
         
-        with patch.object(session, '_execute_suggested_tools') as mock_execute:
-            mock_execute.return_value = "Tool execution complete"
+        # Mock final response after tool execution
+        self.mock_client.chat.return_value = {
+            "type": "text",
+            "content": "File created successfully!"
+        }
+        
+        with patch.object(session.tool_executor, 'execute_tool_calls') as mock_execute, \
+             patch.object(session.tool_executor, 'format_tool_result_for_llm') as mock_format:
+            
+            mock_execute.return_value = [{"success": True, "tool_call_id": "call_1"}]
+            mock_format.return_value = {"role": "tool", "tool_call_id": "call_1", "content": "Success"}
             
             response = session._process_user_input("edit my file.py")
             
-            assert len(session.messages) == 2
+            # Should have: user message, assistant with tool calls, tool result, final assistant
+            assert len(session.messages) >= 3
             mock_execute.assert_called_once()
     
     def test_file_edit_workflow(self):

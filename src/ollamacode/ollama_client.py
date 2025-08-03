@@ -107,6 +107,16 @@ class OllamaClient:
                 # For non-streaming, show spinner during entire request
                 with Live(Spinner("dots", text="[dim]Thinking...[/dim]"), refresh_per_second=10, console=console):
                     response = self.session.post(url, json=payload, timeout=self.timeout)
+                    
+                    # Check for tool support error before raising for status
+                    if response.status_code == 400:
+                        try:
+                            error_data = response.json()
+                            if "error" in error_data and "does not support tools" in error_data["error"]:
+                                return {"type": "error", "content": error_data["error"]}
+                        except json.JSONDecodeError:
+                            pass
+                    
                     response.raise_for_status()
                     response_data = response.json()
                     
@@ -164,4 +174,11 @@ class OllamaClient:
     def chat_with_tools(self, messages: list, stream: bool = False) -> Dict[str, Any]:
         """Chat with the model using OllamaCode's built-in tools."""
         tools = get_ollamacode_tools()
-        return self.chat(messages, stream=stream, tools=tools)
+        response = self.chat(messages, stream=stream, tools=tools)
+        
+        # If model doesn't support tools, fall back to regular chat
+        if response["type"] == "error" and "does not support tools" in response["content"]:
+            console.print("[yellow]Model doesn't support tools, falling back to legacy mode[/yellow]")
+            return self.chat(messages, stream=stream, tools=None)
+        
+        return response

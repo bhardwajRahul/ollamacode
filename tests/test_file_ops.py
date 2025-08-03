@@ -5,33 +5,42 @@ import tempfile
 import os
 from pathlib import Path
 from ollamacode.tools import FileOperations
+from ollamacode.permissions import PermissionManager
 
 
-def test_read_file_success():
+@pytest.fixture
+def file_ops():
+    """Create FileOperations instance with permissive permissions for testing."""
+    perm_manager = PermissionManager()
+    perm_manager.approve_all_for_session()  # Allow all operations for testing
+    return FileOperations(perm_manager)
+
+
+def test_read_file_success(file_ops):
     """Test successful file reading."""
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("Hello, world!")
         temp_path = f.name
     
     try:
-        content = FileOperations.read_file(temp_path)
+        content = file_ops.read_file(temp_path)
         assert content == "Hello, world!"
     finally:
         os.unlink(temp_path)
 
 
-def test_read_file_not_exists():
+def test_read_file_not_exists(file_ops):
     """Test reading a non-existent file."""
-    content = FileOperations.read_file("/nonexistent/file.txt")
+    content = file_ops.read_file("/nonexistent/file.txt")
     assert content is None
 
 
-def test_write_file_success():
+def test_write_file_success(file_ops):
     """Test successful file writing."""
     with tempfile.TemporaryDirectory() as temp_dir:
         file_path = os.path.join(temp_dir, "test.txt")
         
-        success = FileOperations.write_file(file_path, "Test content")
+        success = file_ops.write_file(file_path, "Test content", show_diff=False)
         assert success is True
         
         with open(file_path, 'r') as f:

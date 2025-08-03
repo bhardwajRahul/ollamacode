@@ -212,9 +212,15 @@ When users ask for help, consider the project context and suggest relevant actio
                 # LLM wants to use tools
                 return self._handle_tool_calls_response(response)
             elif response["type"] == "text":
-                # Regular text response
+                # Regular text response (could be from tool calling or fallback)
                 content = response["content"]
                 self.messages.append({"role": "assistant", "content": content})
+                
+                # If this seems like a tool request but we got a text response, 
+                # try legacy tool execution
+                if self._should_use_tools(user_input):
+                    return self._execute_suggested_tools(content, user_input)
+                
                 return content
             else:
                 # Error response
@@ -223,7 +229,10 @@ When users ask for help, consider the project context and suggest relevant actio
         except Exception as e:
             error_msg = create_detailed_error_message(e, "AI response generation", user_input)
             console.print(error_msg)
-            return f"Sorry, I encountered an error: {e}"
+            
+            # Fall back to legacy approach on any error
+            console.print("[yellow]Falling back to legacy tool detection...[/yellow]")
+            return self._process_user_input_legacy(user_input)
     
     def _process_user_input_legacy(self, user_input: str) -> str:
         """Process user input and determine appropriate response (legacy keyword detection)."""
