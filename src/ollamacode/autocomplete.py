@@ -1,4 +1,4 @@
-"""Auto-completion system for OllamaCode commands and inputs."""
+"""Auto-completion system for Ollamacode CLI commands and inputs."""
 
 import re
 from typing import List, Dict, Tuple, Optional
@@ -23,12 +23,12 @@ class AutoCompleter:
             'examples': ['/clear']
         },
         'exit': {
-            'description': 'Exit OllamaCode',
+            'description': 'Exit Ollamacode CLI',
             'args': [],
             'examples': ['/exit', '/quit']
         },
         'quit': {
-            'description': 'Exit OllamaCode',
+            'description': 'Exit Ollamacode CLI',
             'args': [],
             'examples': ['/quit', '/exit']
         },

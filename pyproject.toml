@@ -3,10 +3,10 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ollamacode"
+name = "ollamacode_cli"
 version = "0.1.0"
-description = "A CLI tool for AI-assisted coding using Ollama"
-authors = [{name = "OllamaCode Team"}]
+description = "Ollamacode CLI - An intelligent CLI companion for developers powered by Ollama"
+authors = [{name = "Ollamacode CLI Team"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.8"

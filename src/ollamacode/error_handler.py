@@ -1,4 +1,4 @@
-"""Error handling utilities for OllamaCode."""
+"""Error handling utilities for Ollamacode CLI."""
 
 import sys
 import traceback
@@ -11,7 +11,7 @@ console = Console()
 
 
 class OllamaCodeError(Exception):
-    """Base exception for OllamaCode."""
+    """Base exception for Ollamacode CLI."""
     pass
 
 

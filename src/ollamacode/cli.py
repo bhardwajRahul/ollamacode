@@ -1,4 +1,4 @@
-"""Main CLI interface for OllamaCode."""
+"""Main CLI interface for Ollamacode CLI."""
 
 import click
 import sys
@@ -26,10 +26,10 @@ console = Console()
 @click.version_option()
 @handle_errors
 def main(initial_prompt, prompt, continue_session, model, url, config_only, set_endpoint, set_model, timeout, verbose, quiet):
-    """OllamaCode - AI-assisted coding with Ollama.
+    """Ollamacode CLI - AI-assisted coding with Ollama.
     
     An interactive AI coding assistant that runs locally using Ollama.
-    Similar to Claude Code but powered by local models.
+    Similar to Claude Code but powered by local Ollama models.
     
     Examples:
         ollamacode                                    # Start interactive session
@@ -48,7 +48,7 @@ def main(initial_prompt, prompt, continue_session, model, url, config_only, set_
     config = Config()
     
     if config_only:
-        console.print("[bold blue]OllamaCode Configuration[/bold blue]")
+        console.print("[bold blue]Ollamacode CLI Configuration[/bold blue]")
         console.print(config.show_config())
         return
     

@@ -1,4 +1,4 @@
-"""Interactive session management for OllamaCode."""
+"""Interactive session management for Ollamacode CLI."""
 
 import os
 import sys
@@ -24,7 +24,7 @@ console = Console()
 
 
 class InteractiveSession:
-    """Manage an interactive OllamaCode session."""
+    """Manage an interactive Ollamacode CLI session."""
     
     def __init__(self, model: str = None, url: str = None, timeout: int = None, 
                  verbose: bool = None, quiet: bool = None):
@@ -72,7 +72,7 @@ class InteractiveSession:
         self._auto_load_project_context()
         
         console.print(Panel.fit(
-            f"🦙 OllamaCode Interactive Session\n"
+            f"🦙 Ollamacode CLI Interactive Session\n"
             f"Model: [bold]{self.client.model}[/bold] | "
             f"Project: [bold]{self.context_mgr._context['project_name']}[/bold]",
             style="bold green"
@@ -846,12 +846,12 @@ DO NOT make up or hallucinate any command outputs - only use the real data provi
     
     def _show_help(self) -> str:
         """Show help information."""
-        help_text = """[bold blue]OllamaCode Slash Commands[/bold blue]
+        help_text = """[bold blue]Ollamacode CLI Slash Commands[/bold blue]
 
 [bold yellow]Session Management:[/bold yellow]
   /help                Show this help message
   /clear               Clear conversation history  
-  /exit, /quit         Exit OllamaCode
+  /exit, /quit         Exit Ollamacode CLI
   /sessions            List saved sessions
   
 [bold yellow]Configuration:[/bold yellow]
@@ -1282,7 +1282,7 @@ Please provide an improved version of this file. Consider the project context an
 [bold yellow]Configuration:[/bold yellow]
   /feedback config             Configure feedback settings
 
-[dim]Your feedback helps improve OllamaCode for everyone![/dim]"""
+[dim]Your feedback helps improve Ollamacode CLI for everyone![/dim]"""
         
         if not self.feedback_collector.is_configured():
             help_text += "\n\n[yellow]⚠️  Feedback system not configured.[/yellow]"

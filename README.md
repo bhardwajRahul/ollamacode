@@ -1,12 +1,12 @@
-# 🦙 OllamaCode
+# 🦙 Ollamacode CLI
 
-**An intelligent CLI companion for developers** - An AI coding assistant that executes your requests instead of just generating code blocks.
+**An intelligent CLI companion for developers** - An AI coding assistant powered by Ollama that executes your requests instead of just generating code blocks.
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Ollama](https://img.shields.io/badge/Ollama-compatible-green.svg)](https://ollama.ai/)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 🎯 **Why OllamaCode?**
+## 🎯 **Why Ollamacode CLI?**
 
 **The Problem with Other AI Assistants:**
 ```bash
@@ -15,10 +15,10 @@ Other AI: Here's the code: ```python [shows code block]
 You: 😤 Now I have to copy, paste, save, and run it manually...
 ```
 
-**The OllamaCode Solution:**
+**The Ollamacode CLI Solution:**
 ```bash
 You: "create a Python script that fetches weather data and run it"
-OllamaCode: 🔧 Creating weather_fetcher.py...
+Ollamacode CLI: 🔧 Creating weather_fetcher.py...
            🔧 Running python weather_fetcher.py...
            ✅ Current weather: 72°F, sunny ☀️
 You: 🎉 It actually works!
@@ -26,20 +26,20 @@ You: 🎉 It actually works!
 
 ## 🎬 Live Demos
 
-See OllamaCode in action with these real-world demonstrations:
+See Ollamacode CLI in action with these real-world demonstrations:
 
 ### Demo 1: Automated Script Creation & Execution
-Watch OllamaCode create a Python script from natural language and execute it automatically.
+Watch Ollamacode CLI create a Python script from natural language and execute it automatically.
 
 ![Script Creation Demo](demos/demo_1.gif)
 
 ### Demo 2: Git Repository Management  
-See how OllamaCode can initialize a git repository and create commits with intelligent commit messages.
+See how Ollamacode CLI can initialize a git repository and create commits with intelligent commit messages.
 
 ![Git Management Demo](demos/demo_2.gif)
 
 ### Demo 3: Codebase Analysis & Documentation
-Observe OllamaCode studying your codebase and automatically updating documentation.
+Observe Ollamacode CLI studying your codebase and automatically updating documentation.
 
 ![Codebase Analysis Demo](demos/demo_3.gif)
 
@@ -74,8 +74,8 @@ Observe OllamaCode studying your codebase and automatically updating documentati
 
 ```bash
 # Install from source
-git clone https://github.com/tooyipjee/ollamacode.git
-cd ollamacode
+git clone https://github.com/tooyipjee/ollamacode_cli.git
+cd ollamacode_cli
 pip install -e .
 
 # Make sure Ollama is running
@@ -116,7 +116,7 @@ Create functional code files from natural language descriptions:
 ```bash
 You: write a file that generates sine wave data and saves as CSV
 
-🦙 OllamaCode creates: sine_wave_generator.py
+🦙 Ollamacode CLI creates: sine_wave_generator.py
 ```
 
 ```python
@@ -152,7 +152,7 @@ All code responses feature automatic language detection and rich formatting:
 ````bash
 You: show me a Python function for fibonacci
 
-🦙 OllamaCode responds with highlighted code:
+🦙 Ollamacode CLI responds with highlighted code:
 ```python
 def fibonacci(n: int) -> int:
     """Calculate the nth Fibonacci number using dynamic programming."""
@@ -203,7 +203,7 @@ Easily reference files in your conversations:
 ```bash
 You: explain @main.py and suggest improvements
 
-🦙 OllamaCode automatically reads and analyzes the file:
+🦙 Ollamacode CLI automatically reads and analyzes the file:
 ```
 File: main.py
 [Content displayed with syntax highlighting]
@@ -241,7 +241,7 @@ File not found: config.txt
 
 For more help:
 • Type `/help` for available commands
-• Report issues: https://github.com/tooyipjee/ollamacode/issues
+• Report issues: https://github.com/tooyipjee/ollamacode_cli/issues
 ```
 
 ### ⚡ Intelligent Caching
@@ -261,7 +261,7 @@ Cache: 15 entries, 2.3 MB, 85% hit rate
 
 ### 🎯 Project Context Awareness
 
-OllamaCode automatically understands your project:
+Ollamacode CLI automatically understands your project:
 
 ```bash
 🔍 Project context automatically loaded
@@ -294,7 +294,7 @@ Continuing session session_1234567890
 
 ## 🌐 Network & Remote Endpoints
 
-OllamaCode supports connecting to Ollama servers running on different machines, allowing you to leverage more powerful hardware for heavy models.
+Ollamacode CLI supports connecting to Ollama servers running on different machines, allowing you to leverage more powerful hardware for heavy models.
 
 ### Quick Start with Remote Endpoints
 
@@ -496,8 +496,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ### Development Setup
 
 ```bash
-git clone https://github.com/tooyipjee/ollamacode.git
-cd ollamacode
+git clone https://github.com/tooyipjee/ollamacode_cli.git
+cd ollamacode_cli
 pip install -e .[dev]
 
 # Run tests
@@ -585,7 +585,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Ready to supercharge your coding workflow?** 🚀
 
 ```bash
-pip install ollamacode
+pip install ollamacode_cli
 ollamacode
 ```
 
