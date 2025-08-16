@@ -21,9 +21,11 @@ console = Console()
 @click.option('--set-endpoint', help='Set default Ollama endpoint URL and exit')
 @click.option('--set-model', help='Set default model and exit')
 @click.option('--timeout', type=int, help='Request timeout in seconds (default: 120)')
+@click.option('--verbose', '-v', is_flag=True, help='Enable verbose mode (detailed explanations)')
+@click.option('--quiet', '-q', is_flag=True, help='Enable quiet mode (minimal explanations)')
 @click.version_option()
 @handle_errors
-def main(initial_prompt, prompt, continue_session, model, url, config_only, set_endpoint, set_model, timeout):
+def main(initial_prompt, prompt, continue_session, model, url, config_only, set_endpoint, set_model, timeout, verbose, quiet):
     """OllamaCode - AI-assisted coding with Ollama.
     
     An interactive AI coding assistant that runs locally using Ollama.
@@ -38,6 +40,8 @@ def main(initial_prompt, prompt, continue_session, model, url, config_only, set_
         ollamacode --endpoint http://192.168.1.100:11434  # Use remote Ollama server
         ollamacode --set-endpoint http://server:11434 # Set default endpoint
         ollamacode --timeout 180                      # Use 3-minute timeout for slow endpoints
+        ollamacode --verbose                          # Enable detailed explanations
+        ollamacode --quiet                            # Enable minimal output mode
         ollamacode --config-only                      # Show current configuration
     """
     
@@ -63,8 +67,8 @@ def main(initial_prompt, prompt, continue_session, model, url, config_only, set_
     if not sys.stdin.isatty():
         piped_input = sys.stdin.read().strip()
     
-    # Start session
-    session = InteractiveSession(model=model, url=url, timeout=timeout)
+    # Start session with verbosity settings
+    session = InteractiveSession(model=model, url=url, timeout=timeout, verbose=verbose, quiet=quiet)
     
     if prompt:
         # Headless mode

@@ -41,6 +41,8 @@ class Config:
             "auto_save_conversations": True,
             "show_context_hints": True,
             "safe_mode": True,
+            "verbose_mode": False,  # Control LLM chattiness
+            "show_tool_progress": True,  # Show detailed tool execution feedback
             "allowed_commands": [
                 "ls", "cat", "grep", "find", "head", "tail", "wc", "sort", "uniq",
                 "pwd", "whoami", "date", "echo", "which", "type",

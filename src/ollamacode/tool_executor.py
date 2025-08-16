@@ -3,6 +3,8 @@
 import json
 from typing import Dict, Any, List, Optional
 from rich.console import Console
+from rich.spinner import Spinner
+from rich.live import Live
 
 from .tools.file_ops import FileOperations
 from .tools.bash_ops import BashOperations  
@@ -17,8 +19,9 @@ console = Console()
 class ToolCallExecutor:
     """Execute tool calls from Ollama LLM responses."""
     
-    def __init__(self, permission_manager: Optional[PermissionManager] = None):
+    def __init__(self, permission_manager: Optional[PermissionManager] = None, config=None):
         self.permissions = permission_manager or PermissionManager()
+        self.config = config
         
         # Initialize tool instances
         self.file_ops = FileOperations(self.permissions)
@@ -91,10 +94,26 @@ class ToolCallExecutor:
             
             func = self.function_map[function_name]
             
-            # Execute the function
-            console.print(f"[dim]🔧 Executing: {function_name}({', '.join(f'{k}={v}' for k, v in arguments.items())})[/dim]")
+            # Execute the function with user feedback based on settings
+            show_progress = self.config.get('show_tool_progress', True) if self.config else True
             
-            result = func(**arguments)
+            if show_progress:
+                console.print(f"[blue]🔧 Executing: {function_name}[/blue]", end="")
+                
+                # Show progress for potentially long-running commands
+                if function_name == "run_command":
+                    console.print(f" → [dim]{arguments.get('command', '')}[/dim]")
+                    with Live(Spinner("dots", text="[dim]Running...[/dim]"), refresh_per_second=4, console=console) as live:
+                        result = func(**arguments)
+                        live.stop()
+                    console.print("[green]✓[/green] Command completed")
+                else:
+                    console.print()  # New line
+                    result = func(**arguments)
+                    console.print(f"[green]✓[/green] {function_name} completed")
+            else:
+                # Quiet mode - just execute without progress indicators
+                result = func(**arguments)
             
             # Format the result
             return {

@@ -26,8 +26,18 @@ console = Console()
 class InteractiveSession:
     """Manage an interactive OllamaCode session."""
     
-    def __init__(self, model: str = None, url: str = None, timeout: int = None):
+    def __init__(self, model: str = None, url: str = None, timeout: int = None, 
+                 verbose: bool = None, quiet: bool = None):
         self.config = Config()
+        
+        # Handle verbosity settings - quiet overrides verbose
+        if quiet:
+            self.config.set('verbose_mode', False)
+            self.config.set('show_tool_progress', False)
+        elif verbose:
+            self.config.set('verbose_mode', True)
+            self.config.set('show_tool_progress', True)
+        
         self.client = OllamaClient(
             base_url=url or self.config.get('ollama_url'),
             model=model or self.config.get('default_model'),
@@ -44,7 +54,7 @@ class InteractiveSession:
         self.feedback_collector = FeedbackCollector()
         
         # Initialize tool call executor for new tool calling approach
-        self.tool_executor = ToolCallExecutor(self.permissions)
+        self.tool_executor = ToolCallExecutor(self.permissions, self.config)
         
         # Session state
         self.conversation_id = f"session_{int(datetime.now().timestamp())}"
@@ -275,8 +285,57 @@ When users ask for help, consider the project context and suggest relevant actio
             tool_message = self.tool_executor.format_tool_result_for_llm(tool_result)
             self.messages.append(tool_message)
         
-        # Get LLM's response after tool execution
+        # Check if we should skip final LLM response to reduce chattiness  
+        if not self.config.get('verbose_mode', False):
+            # For simple tool execution, just return a concise summary
+            successful_tools = [r for r in tool_results if r["success"]]
+            failed_tools = [r for r in tool_results if not r["success"]]
+            
+            # Only skip LLM response for simple single-step operations
+            # Let LLM continue for multi-step workflows or complex requests
+            if successful_tools and not failed_tools and len(successful_tools) == 1:
+                tool = successful_tools[0]
+                user_input = self.messages[-2]["content"] if len(self.messages) >= 2 else ""
+                
+                # Check if this looks like a multi-step request
+                multi_step_keywords = ["and", "then", "also", "next", "after", "run it", "execute it", "test it"]
+                is_multi_step = any(keyword in user_input.lower() for keyword in multi_step_keywords)
+                
+                # Only return directly for simple single operations, not multi-step
+                if not is_multi_step:
+                    if tool["function_name"] == "run_command":
+                        # Show command output directly
+                        result = tool["result"]
+                        if result.get("stdout"):
+                            return result["stdout"].strip()
+                        else:
+                            return f"✅ Command executed successfully"
+                    elif tool["function_name"] == "write_file":
+                        return f"✅ File created: {tool['arguments'].get('file_path', 'unknown')}"
+                    else:
+                        return f"✅ {tool['function_name']} completed successfully"
+
+        # Get LLM's response after tool execution (verbose mode or if there were errors)
         try:
+            # Add system message to encourage conciseness if not in verbose mode
+            if not self.config.get('verbose_mode', False):
+                # Check if user might want more actions
+                user_input = self.messages[-2]["content"] if len(self.messages) >= 2 else ""
+                multi_step_keywords = ["and", "then", "also", "next", "after", "run it", "execute it", "test it"]
+                is_multi_step = any(keyword in user_input.lower() for keyword in multi_step_keywords)
+                
+                if is_multi_step:
+                    concise_prompt = {
+                        "role": "system", 
+                        "content": "The user requested multiple actions. Check if all requested tasks are complete. If more steps are needed, execute them. Be concise in explanations."
+                    }
+                else:
+                    concise_prompt = {
+                        "role": "system", 
+                        "content": "Be concise. The tools have executed successfully. Provide a brief summary without lengthy explanations unless specifically asked."
+                    }
+                self.messages.append(concise_prompt)
+            
             final_response = self.client.chat(self.messages, stream=False)
             
             if final_response["type"] == "text":
@@ -772,6 +831,8 @@ DO NOT make up or hallucinate any command outputs - only use the real data provi
             return self._handle_completion_command(args)
         elif cmd == "feedback":
             return self._handle_feedback_command(args)
+        elif cmd == "verbose":
+            return self._handle_verbose_command(args)
         elif cmd == "exit" or cmd == "quit":
             # Set a flag to exit gracefully instead of calling sys.exit() directly
             if len(self.messages) > 1:  # More than just system message
@@ -801,6 +862,7 @@ DO NOT make up or hallucinate any command outputs - only use the real data provi
   /cache               Manage response cache
   /complete            Show completion suggestions
   /feedback            Submit feedback or bug reports
+  /verbose [on|off]    Control verbosity mode (detailed vs concise)
   
 [bold yellow]File Operations:[/bold yellow]
   @filename            Reference a file in your prompt
@@ -821,6 +883,33 @@ DO NOT make up or hallucinate any command outputs - only use the real data provi
         system_messages = [msg for msg in self.messages if msg.get('role') == 'system']
         self.messages = system_messages
         return "[green]Conversation history cleared.[/green]"
+    
+    def _handle_verbose_command(self, args: str) -> str:
+        """Handle verbosity control command."""
+        args = args.strip().lower()
+        
+        if not args:
+            # Show current setting
+            current_verbose = self.config.get('verbose_mode', False)
+            current_progress = self.config.get('show_tool_progress', True)
+            status = "verbose" if current_verbose else "concise"
+            progress_status = "enabled" if current_progress else "disabled"
+            return f"[blue]Current verbosity mode: {status}[/blue]\n[blue]Tool progress display: {progress_status}[/blue]"
+        
+        if args in ["on", "true", "verbose", "detailed"]:
+            self.config.set('verbose_mode', True)
+            self.config.set('show_tool_progress', True)
+            return "[green]✅ Verbose mode enabled[/green] - Detailed explanations and full tool progress"
+        elif args in ["off", "false", "concise", "quiet", "minimal"]:
+            self.config.set('verbose_mode', False) 
+            self.config.set('show_tool_progress', True)  # Keep tool progress even in concise mode
+            return "[green]✅ Concise mode enabled[/green] - Brief responses, tool progress shown"
+        elif args in ["silent", "quiet"]:
+            self.config.set('verbose_mode', False)
+            self.config.set('show_tool_progress', False)
+            return "[green]✅ Quiet mode enabled[/green] - Minimal output, no tool progress indicators"
+        else:
+            return f"[red]Unknown verbosity setting: {args}[/red]\nUse: /verbose [on|off|quiet] or /verbose (to show current)"
     
     def _change_model(self, model_name: str) -> str:
         """Change the Ollama model."""
