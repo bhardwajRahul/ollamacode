@@ -33,9 +33,9 @@ class Config:
         # Default configuration
         return {
             "ollama_url": "http://localhost:11434",
-            "default_model": "gemma3",
-            "timeout": 120,
-            "max_tokens": 4096,
+            "default_model": "gpt-oss:120b-cloud",
+            "timeout": 300,
+            "max_tokens": 8192,
             "temperature": 0.7,
             "editor": os.environ.get("EDITOR", "nano"),
             "auto_save_conversations": True,
